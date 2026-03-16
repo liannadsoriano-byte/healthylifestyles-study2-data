@@ -1,0 +1,127 @@
+## Graphing Activity Summary Metrics BL vs INT
+## Made by Lianna Soriano and ChatGPT
+
+library(tidyverse)
+library(ggrepel)
+
+#--------------------------------------------------
+# LOAD DATA
+setwd("C:/Users/liann/Downloads/HL2/HL2 Summary Sheets/data tables")
+
+data <- read_csv("Activity Summary Metrics Mean Overview - Sheet1.csv")
+
+#--------------------------------------------------
+# CLEAN DATA
+
+data <- data %>%
+  
+  separate(`Participant ID`, into = c("ID","Timepoint"), sep = " ") %>%
+  
+  mutate(across(-c(ID, Timepoint), ~as.numeric(gsub(",", "", .)))) %>%
+  
+  mutate(
+    Timepoint = str_trim(Timepoint),
+    Timepoint = str_to_upper(Timepoint),
+    Timepoint = recode(Timepoint,
+                       "BL" = "Baseline",
+                       "INT" = "Intervention")
+  ) %>%
+  
+  filter(!is.na(Timepoint)) %>%   # <-- THIS removes the extra category
+  
+  filter(!if_all(-c(ID, Timepoint), is.na)) %>%
+  
+  mutate(
+    Timepoint = factor(Timepoint, levels = c("Baseline","Intervention"))
+  )
+
+#--------------------------------------------------
+# STEPS PER DAY GRAPH
+
+ggplot(data%>% filter(!is.na(Timepoint)), aes(x = Timepoint,
+                 y = `Steps/day`, ##change y variable
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               color = "black",
+               size = 1.2) +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               color = "black",
+               size = 3) +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               vjust = -1,
+               size = 4) +
+  
+  theme_classic() +
+  labs(
+    title = "Steps per Day BL vs INT",
+    x = "Timepoint",
+    y = "Steps/day",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# SEDENTARY TIME GRAPH
+
+ggplot(data%>% filter(!is.na(Timepoint)), aes(x = Timepoint,
+                 y = `Sedentary (Sec)`,
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               color = "black",
+               size = 1.2) +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               color = "black",
+               size = 3) +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               vjust = -1,
+               size = 4) +
+  
+  theme_classic() +
+  labs(
+    title = "Sedentary Time BL vs INT",
+    x = "Timepoint",
+    y = "Seconds",
+    color = "Participant ID"
+  )
+
