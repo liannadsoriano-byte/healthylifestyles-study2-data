@@ -1,0 +1,401 @@
+## Graphing Sleep Summary Metrics BL vs INT
+## Made by Lianna Soriano and ChatGPT
+
+library(tidyverse)
+library(ggrepel)
+
+#--------------------------------------------------
+# LOAD DATA
+setwd("C:/Users/liann/Downloads/HL2/HL2 Summary Sheets/data tables")
+
+data <- read_csv("Sleep Summary Metrics Mean Overview - Sheet1.csv")
+
+#--------------------------------------------------
+# CLEAN DATA
+
+data <- data %>%
+  
+  # split "784 INT" → ID + Timepoint
+  separate(`Participant ID`, into = c("ID","Timepoint"), sep = " ") %>%
+  
+  # convert numbers
+  mutate(across(-c(ID, Timepoint, `Sleep Onset Time (HH:MM)`, `Rise Time (HH:MM)`),
+                ~as.numeric(gsub(",", "", .)))) %>%
+  
+  mutate(
+    Timepoint = str_trim(Timepoint),
+    Timepoint = str_to_upper(Timepoint),
+    Timepoint = recode(Timepoint,
+                       "BL" = "Baseline",
+                       "INT" = "Intervention")
+  ) %>%
+  
+  # remove rows without timepoint
+  filter(!is.na(Timepoint)) %>%
+  
+  # remove rows where all variables are NA
+  filter(!if_all(-c(ID, Timepoint), is.na)) %>%
+  
+  mutate(
+    Timepoint = factor(Timepoint, levels = c("Baseline","Intervention"))
+  )
+
+#--------------------------------------------------
+# SLEEP ONSET TIME GRAPH 
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Sleep Onset Time (HH:MM)`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# RISE TIME GRAPH 
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Rise Time (HH:MM)`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# TOTAL ELAPSED BED TIME GRAPH
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Total Elapsed Bed Time (Sec)`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# TOTAL SLEEP TIME GRAPH
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Total Sleep Time (Sec)`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# TOTAL WAKE TIME GRAPH
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Total Wake Time (Sec)`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# SLEEP EFFICIENCY GRAPH
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Sleep Efficiency (%)`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# NUMVBER OF ACTIVE PERIODS GRAPH
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Num Active Periods`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
+
+#--------------------------------------------------
+# MEDIAN ACTIVITY LENGTH GRAPH
+
+ggplot(data, aes(x = Timepoint,
+                 y = `Median Activity Length (Sec)`, 
+                 group = ID,
+                 color = factor(ID))) +
+  
+  geom_line(alpha = 0.7) +
+  geom_point(size = 3) +
+  
+  stat_summary(aes(group = 1),
+               fun.data = mean_se,
+               geom = "errorbar",
+               width = 0.1,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "line",
+               size = 1.2,
+               color = "black") +
+  
+  stat_summary(aes(group = 1),
+               fun = mean,
+               geom = "point",
+               size = 3,
+               color = "black") +
+  
+  stat_summary(aes(group = 1,
+                   label = round(after_stat(y),0)),
+               fun = mean,
+               geom = "text",
+               color = "black",
+               size = 4,
+               vjust = -1) +
+  
+  theme_classic() +
+  labs(
+    title = "Total Sleep Time BL vs INT",
+    x = "Timepoint",
+    y = "Total Sleep Time (Sec)",
+    color = "Participant ID"
+  )
