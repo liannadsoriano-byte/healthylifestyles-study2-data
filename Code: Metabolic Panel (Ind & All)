@@ -46,7 +46,7 @@ ggplot(df_summary, aes(x = BL_INT, y = Mean, fill = BL_INT)) +
     linewidth = 0.5
   ) +
   facet_wrap(~ Variable, scales = "free_y", ncol = 4) +
-  scale_fill_manual(values = berkeley_colors) +
+  scale_fill_manual(values = colors) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.35))) +
   theme_bw(base_size = 12) +
   theme(
@@ -70,7 +70,7 @@ library(ggplot2)
 participant_id <- "904"   # change this to the participant you want
 
 # colors
-berkeley_colors <- c("BL" = "#003262", "INT" = "#FDB515")
+colors <- c("BL" = "#003262", "INT" = "#FDB515")
 
 # LOAD DATA
 data <- read.csv("C:/Users/liann/Downloads/HL2/All Participants Quest reports.csv")
@@ -101,7 +101,7 @@ participant_data <- data_long %>%
 ggplot(participant_data, aes(x = BL_INT, y = Value, fill = BL_INT)) +
   geom_col(width = 0.35) +
   facet_wrap(~ Variable, scales = "free_y") +
-  scale_fill_manual(values = berkeley_colors) +
+  scale_fill_manual(values = colors) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.25))) +
   theme_bw(base_size = 12) +
   theme(
