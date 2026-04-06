@@ -1,0 +1,122 @@
+library(tidyverse)
+
+# -------------------------
+# LOAD DATA
+# -------------------------
+df <- read.csv("~/Downloads/QuestData.csv", stringsAsFactors = FALSE)
+
+# -------------------------
+# RESHAPE DATA INTO LONG FORMAT
+# -------------------------
+glucose_long <- df %>%
+  pivot_longer(
+    cols = c(FASTING.SPECIMEN, X2.HOUR.SPECIMEN),
+    names_to = "Time",
+    values_to = "Glucose"
+  ) %>%
+  mutate(
+    Time = recode(Time,
+                  "FASTING.SPECIMEN" = "Fasting",
+                  "X2.HOUR.SPECIMEN" = "2hr"),
+    TimePoint = paste(Time, BL_INT),
+    TimePoint = factor(TimePoint,
+                       levels = c("Fasting BL", "Fasting INT", "2hr BL", "2hr INT")),
+    Participant = factor(Participant)
+  )
+
+# -------------------------
+# REMOVE NA VALUES
+# -------------------------
+glucose_clean <- glucose_long %>% drop_na(Glucose)
+
+# -------------------------
+# CUSTOM MUTED FALL COLORS (your old palette)
+# -------------------------
+muted_colors <- c(
+  "#8B4513", "#A0522D", "#D2691E", "#556B2F", "#6B8E23",
+  "#CD5C5C", "#8B0000", "#B8860B", "#2F4F4F", "#4682B4"
+)
+
+# -------------------------
+# SUMMARY DATA (MEAN ± SE)
+# -------------------------
+summary_data <- glucose_clean %>%
+  group_by(TimePoint) %>%
+  summarise(
+    mean_glucose = mean(Glucose),
+    se_glucose = sd(Glucose) / sqrt(n()),
+    .groups = "drop"
+  )
+
+# -------------------------
+# PLOT
+# -------------------------
+plot_glucose <- ggplot(glucose_clean,
+                       aes(x = TimePoint, y = Glucose, group = Participant, color = Participant)) +
+
+  # Participant lines
+  geom_line(alpha = 0.6, size = 0.9) +
+
+  # Participant points
+  geom_point(size = 3) +
+
+  # Mean ± SE (thinner, centered)
+  geom_errorbar(
+    data = summary_data,
+    aes(x = TimePoint,
+        ymin = mean_glucose - se_glucose,
+        ymax = mean_glucose + se_glucose),
+    width = 0.15,
+    color = "black",
+    size = 0.8,
+    inherit.aes = FALSE
+  ) +
+
+  # Mean as DIAMOND
+  geom_point(
+    data = summary_data,
+    aes(x = TimePoint, y = mean_glucose),
+    shape = 18,   # diamond
+    size = 4.5,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+
+  # Straight overall trend line
+  geom_smooth(
+    aes(group = 1),
+    method = "lm",
+    se = FALSE,
+    color = "black",
+    size = 1.5
+  ) +
+
+  # Colors back to your muted palette
+  scale_color_manual(
+    values = rep(muted_colors, length.out = nlevels(glucose_clean$Participant))
+  ) +
+
+  # Labels
+  labs(
+    title = "Fasting vs. 2 Hour: BL and INT",
+    x = "Time Point",
+    y = "Glucose (mg/dL)",
+    color = "Participant"
+  ) +
+
+  # Theme (restore legend box look)
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 25, hjust = 1),
+    legend.position = "right",
+    legend.background = element_rect(fill = "white", color = "black"),
+    legend.key = element_rect(fill = "white"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 11, face = "bold")
+  )
+
+# -------------------------
+# DISPLAY
+# -------------------------
+print(plot_glucose)
