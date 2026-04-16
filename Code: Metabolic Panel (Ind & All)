@@ -1,65 +1,54 @@
-## Quest CGM Data all participants -----------------------------------------------------------
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+### All participant data ###
+colors <- c(
+  "BL"  = "#8ECAE6",
+  "INT" = "#F28B82"
+)
 
-# colors
-colors <- "BL" = "#003262", "INT" = "#FDB515")
-
-# LOAD + CLEAN DATA
-data <- read.csv("C:/Users/liann/Downloads/HL2/All Participants Quest reports.csv")
-
-data_long <- data %>%
-  pivot_longer(
-    cols = -BL_INT,  # only measurements
-    names_to = "Variable",
-    values_to = "Value"
-  ) %>%
-  mutate(
-    Variable = trimws(Variable),
-    Variable = gsub("\\.", " ", Variable),
-    Variable = ifelse(Variable == "X2 HOUR SPECIMEN", 
-                      "2 HOUR SPECIMEN", 
-                      Variable)
-  ) %>%
-  filter(
-    Variable != "BUN CREATININE RATION",
-    Variable != "Participant"
-  )
-
-# SUMMARY TABLE
-df_summary <- data_long %>%
-  group_by(Variable, BL_INT) %>%
-  summarise(
-    Mean  = mean(Value, na.rm = TRUE),
-    SEM   = ifelse(n() > 1, sd(Value, na.rm = TRUE) / sqrt(n()), 0),
-    .groups = "drop"
-  ) %>%
-  filter(!is.na(Mean))
-
-# PLOT 
 ggplot(df_summary, aes(x = BL_INT, y = Mean, fill = BL_INT)) +
-  geom_col(width = 0.35) +    # << thinner bars
+  
+  # Bars (means)
+  geom_col(width = 0.5, alpha = 0.4) +
+
+  # 🔥 Paired connecting lines (light grey)
+  geom_line(
+    data = data_long,
+    aes(x = BL_INT, y = Value, group = Participant),
+    color = "grey70",
+    alpha = 0.5,
+    linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+
+  # 🔥 Individual participant points (grey)
+  geom_jitter(
+    data = data_long,
+    aes(x = BL_INT, y = Value),
+    width = 0.08,
+    size = 2,
+    alpha = 0.85,
+    color = "grey40",
+    inherit.aes = FALSE
+  ) +
+
+  # Error bars
   geom_errorbar(
     aes(ymin = Mean - SEM, ymax = Mean + SEM),
-    width = 0.15,
-    linewidth = 0.5
+    width = 0.2
   ) +
+
   facet_wrap(~ Variable, scales = "free_y", ncol = 4) +
   scale_fill_manual(values = colors) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.35))) +
-  theme_bw(base_size = 12) +
+
+  theme_bw() +
   theme(
     legend.position = "none",
-    axis.text.x = element_text(angle = 0),
     strip.text = element_text(face = "bold")
   ) +
   labs(
     x = "Condition",
     y = "Mean ± SEM",
-    title = "Quest CGM Data"
+    title = "Quest CGM Data (All Participants)"
   )
-
 
 ### single participant graph (changable) ------------------------------------
 library(dplyr)
