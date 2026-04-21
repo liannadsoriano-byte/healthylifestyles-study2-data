@@ -1,0 +1,97 @@
+install.packages("readr")
+install.packages("dplyr")
+install.packages("openxlsx")
+
+
+library(readr)
+library(dplyr)
+library(openxlsx)
+
+# ==============================
+# 1. Load CSV
+# ==============================
+
+data <- read_csv("C:/Users/lianna.soriano/Downloads/41426HealthyLifestyles-FoodLogsMidpointAndE_DATA_2026-04-14_1644.csv")
+
+# ==============================
+# 2. Filter participant
+# ==============================
+
+participant_id <- 1560
+
+participant_data <- data %>%
+  filter(pt_id == participant_id)
+
+# ==============================
+# 3. Add empty TRE columns
+# ==============================
+
+participant_data <- participant_data %>%
+  mutate(
+    TRE_winstart = NA,
+    TRE_winend = NA,
+    startTRE_format = NA,
+    endTRE_format = NA,
+    endTRE_valid = NA,
+    TRE_duration = NA,
+    startTRE_valid = NA,
+    endTRE_final = NA
+  ) %>%
+  relocate(
+    TRE_winstart, TRE_winend, startTRE_format, endTRE_format,
+    endTRE_valid, TRE_duration, startTRE_valid, endTRE_final,
+    .after = 2
+  )
+
+# ==============================
+# 4. Write Excel file
+# ==============================
+
+wb <- createWorkbook()
+addWorksheet(wb, "TRE")
+
+writeData(wb, "TRE", participant_data)
+
+rows <- nrow(participant_data)
+
+for(i in 2:(rows+1)){
+  
+  writeFormula(wb, "TRE",
+               paste0("MIN(M",i,",P",i,",S",i,",V",i,",Y",i,",AB",i,",AE",i,")"),
+               startCol = 3, startRow = i)
+  
+  writeFormula(wb, "TRE",
+               paste0("MAX(M",i,",P",i,",S",i,",V",i,",Y",i,",AB",i,",AE",i,")"),
+               startCol = 4, startRow = i)
+  
+  writeFormula(wb, "TRE",
+               paste0("(HOUR(C",i,")+MINUTE(C",i,")/60)"),
+               startCol = 5, startRow = i)
+  
+  writeFormula(wb, "TRE",
+               paste0("(HOUR(D",i,")+MINUTE(D",i,")/60)"),
+               startCol = 6, startRow = i)
+  
+  writeFormula(wb, "TRE",
+               paste0("IF(F",i,"<E",i,",F",i,"+24,F",i,")"),
+               startCol = 7, startRow = i)
+  
+  writeFormula(wb, "TRE",
+               paste0("G",i,"-E",i),
+               startCol = 8, startRow = i)
+  
+  writeFormula(wb, "TRE",
+               paste0("IF(H",i,">5,E",i,",\"\")"),
+               startCol = 9, startRow = i)
+  
+  writeFormula(wb, "TRE",
+               paste0("IF(I",i,">5,G",i,",\"\")"),
+               startCol = 10, startRow = i)
+}
+
+saveWorkbook(
+  wb,
+  "C:/Users/lianna.soriano/Downloads/TRE_output.xlsx",
+  overwrite = TRUE
+)
+
