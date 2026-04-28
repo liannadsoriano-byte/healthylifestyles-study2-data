@@ -1,4 +1,3 @@
-### All participant data ###
 colors <- c(
   "BL"  = "#8ECAE6",
   "INT" = "#F28B82"
@@ -9,21 +8,21 @@ ggplot(df_summary, aes(x = BL_INT, y = Mean, fill = BL_INT)) +
   # Bars (means)
   geom_col(width = 0.5, alpha = 0.4) +
 
-  # 🔥 Paired connecting lines (light grey)
+  # Paired connecting lines (slightly darker)
   geom_line(
     data = data_long,
     aes(x = BL_INT, y = Value, group = Participant),
-    color = "grey70",
-    alpha = 0.5,
-    linewidth = 0.6,
+    color = "grey55",   # darker than before
+    alpha = 0.7,
+    linewidth = 0.7,
     inherit.aes = FALSE
   ) +
 
-  # 🔥 Individual participant points (grey)
+  # Individual participant points (more jitter)
   geom_jitter(
     data = data_long,
     aes(x = BL_INT, y = Value),
-    width = 0.08,
+    width = 0.15,       # increased from 0.08 → more spread
     size = 2,
     alpha = 0.85,
     color = "grey40",
@@ -47,9 +46,8 @@ ggplot(df_summary, aes(x = BL_INT, y = Mean, fill = BL_INT)) +
   labs(
     x = "Condition",
     y = "Mean ± SEM",
-    title = "Quest CGM Data (All Participants)"
+    title = "Quest Data (All Participants)"   # fixed title
   )
-
 ### single participant graph (changable) ------------------------------------
 library(dplyr)
 library(tidyr)
