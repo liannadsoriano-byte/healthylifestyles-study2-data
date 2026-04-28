@@ -1,0 +1,153 @@
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+# -------------------------------------------------
+# 1. Load BL + INT data
+# -------------------------------------------------
+bl_files <- list.files(
+  "~/Downloads/Raw Data/BL-selected",
+  pattern = "CGMraw.csv",
+  full.names = TRUE
+)
+
+int_files <- list.files(
+  "~/Downloads/Raw Data/INT-selected",
+  pattern = "CGMraw.csv",
+  full.names = TRUE
+)
+
+load_data <- function(files, condition_label) {
+  lapply(files, function(f) {
+    read_csv(f, col_types = cols(.default = "c"), show_col_types = FALSE) %>%
+      mutate(
+        participant = tools::file_path_sans_ext(basename(f)),
+        condition = condition_label
+      )
+  }) %>%
+    bind_rows()
+}
+
+df_all <- bind_rows(
+  load_data(bl_files, "BL"),
+  load_data(int_files, "INT")
+)
+
+# -------------------------------------------------
+# 2. Clean + extract glucose
+# -------------------------------------------------
+df_all <- df_all %>%
+  select(
+    participant,
+    condition,
+    time = `Timestamp (YYYY-MM-DDThh:mm:ss)`,
+    glucose = `Glucose Value (mg/dL)`
+  ) %>%
+  filter(time != "", !is.na(time)) %>%
+  mutate(
+    time = as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"),
+    glucose = as.numeric(glucose),
+
+    time_sec =
+      as.numeric(format(time, "%H")) * 3600 +
+      as.numeric(format(time, "%M")) * 60 +
+      as.numeric(format(time, "%S"))
+  )
+
+# -------------------------------------------------
+# 3. 5-min binning
+# -------------------------------------------------
+df_all <- df_all %>%
+  mutate(time_bin = as.integer(floor(time_sec / 300) * 300))
+
+# -------------------------------------------------
+# 4. Mean + SEM
+# -------------------------------------------------
+summary_data <- df_all %>%
+  group_by(condition, time_bin) %>%
+  summarise(
+    mean_glucose = mean(glucose, na.rm = TRUE),
+    sd = sd(glucose, na.rm = TRUE),
+    n = sum(!is.na(glucose)),
+    sem = sd / sqrt(n),
+    .groups = "drop"
+  ) %>%
+  filter(time_bin >= 0, time_bin <= 82800)
+
+bl <- summary_data %>% filter(condition == "BL")
+int <- summary_data %>% filter(condition == "INT")
+
+# -------------------------------------------------
+# 5. FINAL PLOT (FIXED + LEGEND + CLEAN)
+# -------------------------------------------------
+ggplot() +
+
+  # BL ribbon
+  geom_ribbon(
+    data = bl,
+    aes(
+      x = time_bin,
+      ymin = mean_glucose - sem,
+      ymax = mean_glucose + sem
+    ),
+    fill = "#4A90E2",
+    alpha = 0.18,
+    inherit.aes = FALSE
+  ) +
+
+  # INT ribbon
+  geom_ribbon(
+    data = int,
+    aes(
+      x = time_bin,
+      ymin = mean_glucose - sem,
+      ymax = mean_glucose + sem
+    ),
+    fill = "#F4A6B3",
+    alpha = 0.18,
+    inherit.aes = FALSE
+  ) +
+
+  # Mean lines (with legend)
+  geom_line(
+    data = summary_data,
+    aes(
+      x = time_bin,
+      y = mean_glucose,
+      color = condition
+    ),
+    linewidth = 0.9
+  ) +
+
+  scale_color_manual(
+    values = c(
+      BL = "#1F5FA8",
+      INT = "#D86A86"
+    ),
+    name = "Condition",
+    labels = c("Baseline (BL)", "Intervention (INT)")
+  ) +
+
+  scale_x_continuous(
+    limits = c(0, 82800),
+    breaks = seq(0, 82800, by = 14400),
+    labels = sprintf("%02d:00", seq(0, 23, by = 4))
+  ) +
+
+  labs(
+    title = "24-Hour Glucose Profile",
+    subtitle = "Baseline vs Intervention (Mean ± SEM)",
+    x = "Time of Day",
+    y = "Glucose (mg/dL)"
+  ) +
+
+  theme_classic(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    axis.line = element_line(linewidth = 0.6),
+    legend.position = "top",
+    legend.title = element_text(face = "bold")
+  )
