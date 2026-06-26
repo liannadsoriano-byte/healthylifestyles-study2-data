@@ -1,0 +1,183 @@
+library(readr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# =====================================================
+# Select files
+# =====================================================
+
+cat("Select BL file\n")
+bl_file <- file.choose()
+
+cat("Select INT file\n")
+int_file <- file.choose()
+
+
+# =====================================================
+# Read files
+# =====================================================
+
+bl <- read_csv(
+  bl_file,
+  show_col_types = FALSE,
+  guess_max = 10000
+) %>%
+  mutate(
+    condition = "BL",
+    `Glucose Value (mg/dL)` = as.numeric(`Glucose Value (mg/dL)`)
+  )
+
+
+int <- read_csv(
+  int_file,
+  show_col_types = FALSE,
+  guess_max = 10000
+) %>%
+  mutate(
+    condition = "INT",
+    `Glucose Value (mg/dL)` = as.numeric(`Glucose Value (mg/dL)`)
+  )
+
+
+df_all <- bind_rows(
+  bl,
+  int
+)
+
+
+# =====================================================
+# Clean Dexcom Data
+# =====================================================
+
+df_all <- df_all %>%
+  filter(
+    `Event Type` == "EGV"
+  ) %>%
+  select(
+    condition,
+    time = `Timestamp (YYYY-MM-DDThh:mm:ss)`,
+    glucose = `Glucose Value (mg/dL)`
+  ) %>%
+  filter(
+    !is.na(time),
+    !is.na(glucose)
+  ) %>%
+  mutate(
+
+    time_sec =
+      hour(time) * 3600 +
+      minute(time) * 60 +
+      second(time)
+
+  )
+
+
+# =====================================================
+# Participant ID
+# =====================================================
+
+participant_id <- sub(
+  "_.*",
+  "",
+  basename(bl_file)
+)
+
+
+# =====================================================
+# Plot Every Data Point
+# =====================================================
+
+p <- ggplot(
+  df_all,
+  aes(
+    x = time_sec,
+    y = glucose
+  )
+) +
+
+  geom_point(
+    color = "black",
+    alpha = 0.25,
+    size = 0.8
+  ) +
+
+  facet_wrap(
+    ~condition,
+    nrow = 1
+  ) +
+
+  scale_x_continuous(
+    limits = c(0, 82800),
+    breaks = seq(
+      0,
+      82800,
+      by = 14400
+    ),
+    labels = c(
+      "00:00",
+      "04:00",
+      "08:00",
+      "12:00",
+      "16:00",
+      "20:00"
+    )
+  ) +
+
+  labs(
+    title = paste(
+      "Participant",
+      participant_id
+    ),
+    subtitle = "Raw CGM Data (All Measurements)",
+    x = "Time of Day",
+    y = "Glucose (mg/dL)"
+  ) +
+
+  theme_classic(base_size = 14) +
+
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5
+    ),
+    strip.background = element_blank(),
+    strip.text = element_text(
+      face = "bold",
+      size = 14
+    ),
+    axis.title = element_text(
+      face = "bold"
+    ),
+    axis.text = element_text(
+      color = "black"
+    )
+  )
+
+
+print(p)
+
+
+# =====================================================
+# Save
+# =====================================================
+
+ggsave(
+  filename = paste0(
+    participant_id,
+    "_CGM_All_Data_Points.png"
+  ),
+  plot = p,
+  width = 10,
+  height = 5,
+  dpi = 300
+)
+
+cat(
+  "\nSaved:",
+  participant_id,
+  "_CGM_All_Data_Points.png\n"
+)
